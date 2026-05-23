@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK with EAS
 
 on:
   push:
@@ -8,37 +8,34 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
     steps:
     - uses: actions/checkout@v3
-
-    - name: Setup Java
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-
+    
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'
-
-    - name: Install Cordova
-      run: npm install -g cordova
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Add Android platform
-      run: cordova platform add android
-
-    - name: Build APK
-      run: cordova build android --release
-
+    
+    - name: Install EAS CLI
+      run: npm install -g eas-cli
+    
+    - name: Build APK with EAS
+      run: |
+        eas build --platform android --non-interactive --wait
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    
+    - name: Download APK
+      run: |
+        # Get the build artifact URL and download it
+        BUILD_ID=$(eas build:list --platform android --limit 1 --json | jq -r '.[0].id')
+        BUILD_INFO=$(eas build:view $BUILD_ID --json)
+        APK_URL=$(echo $BUILD_INFO | jq -r '.artifacts[0].url')
+        wget -O app-release.apk "$APK_URL"
+    
     - name: Upload APK
       uses: actions/upload-artifact@v4
-      if: always()
       with:
         name: heartburn-tracker-apk
-        path: platforms/android/app/build/outputs/apk/release/*.apk
-        if-no-files-found: ignore
+        path: app-release.apk
