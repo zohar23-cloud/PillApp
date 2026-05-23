@@ -32,7 +32,7 @@ jobs:
         cordova build android --release
 
     - name: Upload APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: heartburn-tracker-apk
         path: platforms/android/app/build/outputs/apk/release/*.apk
